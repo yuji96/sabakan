@@ -12,7 +12,7 @@ def name2color(name):
 # ------- debug ------------------------
 
 
-def chack_color(names):
+def check_color(names):
     _, ax = plt.subplots(figsize=(5, len(names) * 0.7))
     data = []
     for i, name in enumerate(names):
@@ -48,4 +48,4 @@ def chack_color(names):
 
 if __name__ == "__main__":
     names = Path("./sample/users.txt").read_text().splitlines()
-    chack_color(names)
+    check_color(names)
