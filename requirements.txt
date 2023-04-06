@@ -2,7 +2,6 @@ pandas
 plotly
 streamlit
 pillow
-xmltodict
 paramiko
 colorutils
 PyYAML

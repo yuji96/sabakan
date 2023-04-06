@@ -3,7 +3,7 @@ import traceback
 import paramiko
 
 
-def ssh(command, secret):
+def ssh(command, secret, timeout=1):
     rsa_key = paramiko.RSAKey.from_private_key_file(
         secret["ssh"]["secret_key_path"], secret["ssh"]["passphrase"]
     )
@@ -16,7 +16,7 @@ def ssh(command, secret):
                 pkey=rsa_key,
                 timeout=1,
             )
-            stdin, stdout, stderr = client.exec_command(command, timeout=1)
+            stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
             return stdout.read().decode("utf8"), stderr.read().decode("utf8")
         except Exception:
             print(traceback.format_exc())
