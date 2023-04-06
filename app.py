@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from pprint import pprint  # noqa
 
@@ -8,10 +9,17 @@ from PIL import Image
 
 from nvidia import parse_nvidia_smi
 
+DEBUG = True
+
 # read data
 # TODO: アプリの中で起動時に読み込む
-xml = Path("sample/nvidia-smi.xml").read_text()
-data = parse_nvidia_smi(xml)
+if DEBUG:
+    data = json.loads(Path("sample/nvidia-smi.json").read_text())
+else:
+    # TODO: ssh の組み込みが未実装
+    xml = Path("sample/nvidia-smi.xml").read_text()
+    data = parse_nvidia_smi(xml)
+
 
 # visualize
 st.set_page_config(layout="wide")
