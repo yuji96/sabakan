@@ -12,7 +12,11 @@ from ssh import ssh
 if __name__ == "__main__":
     DEBUG = False
 
-    st.set_page_config(layout="wide")
+    st.set_page_config(
+        page_title="サーバー管理モニター",
+        page_icon=Image.open("logo.png"),
+        layout="wide",
+    )
 
     # read data
     # TODO: アプリの中で起動時に読み込む
@@ -24,61 +28,50 @@ if __name__ == "__main__":
             "Retrieving server status...\n(Stop if there is no response for 10 seconds.)"
         ):
             data = ssh(secret, "gpustat", "--json", replace_cmd=True)
-            # pprint(res, sort_dicts=False)
 
     # visualize
-    st.write(
-        """<style>
-        [data-testid="stHorizontalBlock"] {
-            align-items: center;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    # TODO: .host のレスポンシブ化
+    css = Path("style.css").read_text()
+    st.write(f"<style>{css}</style>", unsafe_allow_html=True)
 
-    col1, col2 = st.columns([1, 8])
-    with col1:
-        st.image(Image.open("logo.png"), width=100)
-    with col2:
-        st.title("サーバー管理モニター")
-
-    # FIXME: これを逐次的に溜めていく？
-    colors = {"free": "gray"}
-
-    for i, (hostname, response) in enumerate(data.items()):
-        # FIXME: 事前に辞書化
-
-        if response["status"] == "error":
-            label, message = st.columns([1, 12])
-        else:
-            label, *columns = st.columns([1, 4, 4, 4])
-        with label:
-            st.write(
-                f"""<h2 style='vertical-align:middle; font-size:24px;'>
-                        {hostname}
-                    </h2>""",
-                unsafe_allow_html=True,
-            )
-
-        if response["status"] == "error":
-            with message:
-                st.error("No response.", icon="🚨")
-            continue
-
-        gpustat = json.loads(response["stdout"])
-        for gpu, col in zip(gpustat["gpus"], columns):
+    graph, table = st.tabs(["Graph", "Table"])
+    with graph:
+        _, *columns = st.columns([1, 4, 4, 4])
+        for i, col in enumerate(columns):
             with col:
-                if i == 0:
-                    st.write(
-                        f"""<h2 style='text-align:center; font-size:24px;'>
-                                cuda:{gpu['index']}
-                            </h2>""",
-                        unsafe_allow_html=True,
-                    )
-                fig = plot(gpu)
-                st.plotly_chart(fig, use_container_width=True)
+                st.write(f"<h2 class='cuda'>cuda:{i}</h2>", unsafe_allow_html=True)
 
+        for i, (hostname, response) in enumerate(data.items()):
+            # FIXME: 事前に辞書化
+
+            if response["status"] == "error":
+                label, message = st.columns([1, 12])
+            else:
+                label, *columns = st.columns([1, 4, 4, 4])
+            with label:
+                st.write(f"<h2 class='host'>{hostname}</h2>", unsafe_allow_html=True)
+
+            if response["status"] == "error":
+                with message:
+                    st.error("No response.", icon="🚨")
+                continue
+
+            # TODO: リストの順序と gpu index が同じなのか確認が必要
+            gpustat = json.loads(response["stdout"])
+            for gpu, col in zip(gpustat["gpus"], columns):
+                with col:
+                    fig = plot(gpu)
+                    st.plotly_chart(
+                        fig,
+                        use_container_width=True,
+                        config={
+                            "displayModeBar": False,
+                        },
+                    )
+
+    with table:
+        st.header("A cat")
+        st.image("https://static.streamlit.io/examples/cat.jpg", width=200)
         # st.dataframe(
         #     proc.iloc[:][
         #         ["user", "used_memory", "cpu_usage", "cum_time", "pid", "process_name"]

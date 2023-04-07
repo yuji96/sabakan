@@ -1,0 +1,28 @@
+[data-testid="stHorizontalBlock"] {
+  align-items: center;
+}
+button[title="View fullscreen"] {
+  visibility: hidden;
+}
+[href*="#cuda"] {
+  display: none;
+}
+.host {
+  vertical-align: middle;
+  font-size: 24px;
+  padding-bottom: 50%;
+  padding-top: 0;
+}
+.cuda {
+  text-align: center;
+  font-size: 24px;
+}
+div.stTabs button p {
+  font-size: 20px;
+}
+div.stTabs button {
+  width: 50%;
+}
+.block-container {
+  padding-top: 4rem;
+}
