@@ -1,3 +1,4 @@
+import socket
 import traceback
 from multiprocessing import Pool
 
@@ -25,9 +26,12 @@ def worker(args):
                 f"{replaced} {cmd_args}", timeout=timeout_cmd
             )
             return {
+                "status": "ok",
                 "stdout": stdout.read().decode("utf8"),
                 "stderr": stderr.read().decode("utf8"),
             }
+        except socket.timeout:
+            return {"status": "error", "message": "timeout. check SSH and VPN settings."}
         except Exception:
             # TODO
             print(traceback.format_exc())
@@ -57,6 +61,8 @@ def ssh(
                 for name in names
             ],
         )
+        pool.close()
+        pool.join()
     return dict(zip(names, results))
 
 
