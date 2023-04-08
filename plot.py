@@ -13,14 +13,17 @@ def name2color(name):
 
 
 def plot(gpu):
-    # pprint(gpu)
-
     if len(gpu["processes"]) == 0:
         fig = go.Figure()
         fig.update_xaxes(range=[0, gpu["memory.total"]], tickfont=dict(size=16))
         fig.update_yaxes(range=[0, 1], showticklabels=False)
         fig.update_layout(height=120, margin=dict(l=10, r=10, t=8, b=8), dragmode=False)
-        return fig
+        return fig, pd.DataFrame(
+            {
+                "pid": pd.Series(dtype=int),
+                "gpu_memory_usage": pd.Series(dtype=float),
+            }
+        )
 
     proc = pd.DataFrame(gpu["processes"]).sort_values(
         "gpu_memory_usage", ascending=False
@@ -49,7 +52,7 @@ def plot(gpu):
         hoverlabel=dict(font=dict(size=20)),
     )
 
-    return fig
+    return fig, proc
 
 
 if __name__ == "__main__":
