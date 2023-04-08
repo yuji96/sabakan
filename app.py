@@ -21,12 +21,11 @@ if __name__ == "__main__":
     )
 
     # read data
+    tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
+    tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
     if DEBUG:
         server_status = json.loads(Path("sample/gpustat_ps.json").read_text())
     else:
-        tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
-        tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
-
         secret = yaml.safe_load(Path("secret.yaml").read_text())
         secret["ssh"]["passphrase"] = getpass("passphrase: ")
         # FIXME: 鍵の異常系どこでやろう
@@ -51,8 +50,8 @@ if __name__ == "__main__":
 
     gpustat_dfs = []
     ps_dfs = []
-    graph, table = st.tabs(["Graph", "Table"])
-    with graph:
+    overview_tab, gpu_tab, process_tab = st.tabs(["Overview", "GPU", "Process"])
+    with overview_tab:
         _, *columns = st.columns([1, 4, 4, 4])
         for i, col in enumerate(columns):
             with col:
@@ -116,7 +115,7 @@ if __name__ == "__main__":
         inplace=True,
     )
 
-    with table:
+    with process_tab:
         st.info(
             "ヘッダーをホバーしたときに出てくる ≡ から `Autosize All Columns` を実行すると見やすくなります。",
             icon="👀",
@@ -131,5 +130,38 @@ if __name__ == "__main__":
             status_df,
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
             gridOptions=options.build(),
+            custom_css={"#gridToolBar": {"display": "none"}},
+        )
+
+    with gpu_tab:
+        st.info(
+            "ヘッダーをホバーしたときに出てくる ≡ から `Autosize All Columns` を実行すると見やすくなります。",
+            icon="👀",
+        )
+
+        gpu_df = []
+        for i, (hostname, response) in enumerate(server_status.items()):
+            gpustat = response["gpustat"]
+            for gpu in gpustat["gpus"]:
+                gpu["host"] = hostname
+                gpu["process_count"] = len(gpu["processes"])
+                gpu_df.append(gpu)
+        gpu_df = pd.DataFrame(gpu_df).reindex(
+            columns=[
+                "host",
+                "memory.total",
+                "memory.used",
+                "utilization.gpu",
+                "process_count",
+                "temperature.gpu",
+                "fan.speed",
+                "enforced.power.limit",
+                "power.draw",
+            ]
+        )
+        AgGrid(
+            gpu_df,
+            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
+            # gridOptions=options.build(),
             custom_css={"#gridToolBar": {"display": "none"}},
         )
