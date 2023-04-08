@@ -29,7 +29,7 @@ if __name__ == "__main__":
             root.joinpath("../sample/gpustat_ps.json").read_text()
         )
     else:
-        secret = yaml.safe_load(root.joinpath("secret.yaml").read_text())
+        secret = yaml.safe_load(Path.home().joinpath(".sabakan/secret.yaml").read_text())
         secret["ssh"]["passphrase"] = getpass("passphrase: ")
         # FIXME: 鍵の異常系どこでやろう
         # paramiko.ssh_exception.SSHException
