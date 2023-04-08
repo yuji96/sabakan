@@ -1,10 +1,10 @@
 import json
 import socket
-import traceback
 from multiprocessing import Pool
 
 import pandas as pd
 import paramiko
+import streamlit as st
 
 
 def run_gpustat(client, secret, name, timeout_cmd):
@@ -49,22 +49,20 @@ def worker(args):
         try:
             client.connect(
                 secret["servers"][name]["host"],
-                username=secret["user"],
+                username=secret["ssh"]["user"],
                 pkey=private_key,
                 timeout=timeout_client,
             )
-            del secret["ssh"], secret["user"], private_key
+            del secret["ssh"], private_key
             gpustat, pids = run_gpustat(client, secret, name, timeout_cmd)
             ps = run_ps(client, pids, timeout_cmd, return_as_dict)
 
             return {"status": "ok", "gpustat": gpustat, "ps": ps}
         except socket.timeout:
             return {"status": "error", "message": "timeout. check SSH and VPN settings."}
-        except Exception:
-            # TODO
-            print(traceback.format_exc())
 
 
+@st.cache_data
 def fetch_sever_status(
     secret, names=None, timeout_cmd=3, timeout_client=10, return_as_dict=False
 ):

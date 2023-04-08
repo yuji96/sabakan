@@ -3,5 +3,5 @@ plotly
 streamlit
 pillow
 paramiko
-colorutils
 PyYAML
+streamlit-aggrid

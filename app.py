@@ -1,4 +1,5 @@
 import json
+from getpass import getpass
 from pathlib import Path
 
 import pandas as pd
@@ -20,15 +21,28 @@ if __name__ == "__main__":
     )
 
     # read data
-    # TODO: アプリの中で起動時に読み込む
     if DEBUG:
         server_status = json.loads(Path("sample/gpustat_ps.json").read_text())
     else:
+        tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
+        tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
+
         secret = yaml.safe_load(Path("secret.yaml").read_text())
-        with st.spinner(
-            "Retrieving server status...\n(Stop if there is no response for 10 seconds.)"
-        ):
+        secret["ssh"]["passphrase"] = getpass("passphrase: ")
+        # FIXME: 鍵の異常系どこでやろう
+        # paramiko.ssh_exception.SSHException
+        if not secret["ssh"]["passphrase"]:
+            st.stop()
+
+        try:
             server_status = fetch_sever_status(secret)
+        except Exception:
+            st.cache_data.clear()
+            raise
+
+    tmp1.empty()
+    tmp2.empty()
+    print("ブラウザにサーバ情報を表示しました。")
 
     # visualize
     # TODO: .host のレスポンシブ化
