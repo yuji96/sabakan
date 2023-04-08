@@ -6,17 +6,18 @@ import pandas as pd
 import streamlit as st
 import yaml
 from PIL import Image
+from plot import plot
 from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridOptionsBuilder
 
-from plot import plot
-from ssh import fetch_sever_status
+from sabakan.ssh import fetch_sever_status
 
 if __name__ == "__main__":
     DEBUG = False
+    root = Path(__file__).parent
 
     st.set_page_config(
         page_title="サーバー管理モニター",
-        page_icon=Image.open("logo.png"),
+        page_icon=Image.open(root.joinpath("./assets/logo.png")),
         layout="wide",
     )
 
@@ -24,9 +25,11 @@ if __name__ == "__main__":
     tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
     tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
     if DEBUG:
-        server_status = json.loads(Path("sample/gpustat_ps.json").read_text())
+        server_status = json.loads(
+            root.joinpath("../sample/gpustat_ps.json").read_text()
+        )
     else:
-        secret = yaml.safe_load(Path("secret.yaml").read_text())
+        secret = yaml.safe_load(root.joinpath("secret.yaml").read_text())
         secret["ssh"]["passphrase"] = getpass("passphrase: ")
         # FIXME: 鍵の異常系どこでやろう
         # paramiko.ssh_exception.SSHException
@@ -45,7 +48,7 @@ if __name__ == "__main__":
 
     # visualize
     # TODO: .host のレスポンシブ化
-    css = Path("style.css").read_text()
+    css = root.joinpath("assets/style.css").read_text()
     st.write(f"<style>{css}</style>", unsafe_allow_html=True)
 
     gpustat_dfs = []
