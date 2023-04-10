@@ -17,6 +17,17 @@ def color_per_host(df: pd.DataFrame):
     return df.loc[color_row]
 
 
+def convert_unit(series: pd.Series):
+    unit = pd.Categorical(series.str[-1], list("KMGT"))
+    digits = series.str.rstrip("KMGT").astype(float)
+
+    digits[unit == "T"] *= 1024**1
+    # digits[unit == "G"] *= 1024 ** 0
+    digits[unit == "M"] *= 1024**-1
+    digits[unit == "K"] *= 1024**-2
+    return digits
+
+
 if __name__ == "__main__":
     DEBUG = False
     root = Path(__file__).parent
@@ -33,7 +44,7 @@ if __name__ == "__main__":
     # read data
     if DEBUG:
         server_status = json.loads(
-            root.joinpath("../sample/gpustat_ps.json").read_text()
+            root.joinpath("../sample/server_status.json").read_text()
         )
     else:
         config["ssh"]["passphrase"] = get_passphrase()
@@ -43,6 +54,10 @@ if __name__ == "__main__":
 
         try:
             server_status = fetch_sever_status(config)
+            # uncomment to create sample data
+            # Path("sample/server_status.json").write_text(
+            #     json.dumps(server_status, indent=2)
+            # )
             print("ブラウザにサーバ情報を表示/更新しました。")
         except Exception:
             st.cache_data.clear()
@@ -179,4 +194,32 @@ if __name__ == "__main__":
         )
 
     with storage_tab:
-        pass
+        user_dfs = []
+        sum_df = []
+        for host, response in server_status.items():
+            du = response["du"]
+            user_df = (
+                pd.DataFrame(du.pop("user"))
+                .set_index("user")
+                .rename(columns={"usage": host})
+            )
+            user_dfs.append(user_df)
+
+            du["host"] = host
+            sum_df.append(du)
+
+        user_df = pd.concat(user_dfs, axis="columns")
+        sum_df = pd.DataFrame(sum_df).reindex(
+            columns=["host", "full", "used", "avail", "used_rate", "run_at"]
+        )
+
+        col1, col2 = st.columns([4, 5])
+        with col1:
+            st.dataframe(
+                sum_df, height=(len(sum_df) + 1) * 35 + 3, use_container_width=True
+            )
+        with col2:
+            user_df = user_df.apply(convert_unit, axis="rows").rename_axis("単位: GiB")
+            st.dataframe(
+                user_df, height=(len(user_df) + 1) * 35 + 3, use_container_width=True
+            )

@@ -2,6 +2,9 @@
 [data-testid="stHorizontalBlock"] {
   align-items: center;
 }
+#tabs-bui3-tabpanel-3 [data-testid="stHorizontalBlock"] {
+  align-items: stretch;
+}
 button[title="View fullscreen"] {
   visibility: hidden;
 }

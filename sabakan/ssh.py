@@ -18,8 +18,8 @@ def get_passphrase():
     return passphrase
 
 
-def run_gpustat(client, config, name, timeout_cmd):
-    cmd = config["servers"][name]["gpustat"] + " --json"
+def run_gpustat(client, host_config, timeout_cmd):
+    cmd = host_config["gpustat"] + " --json"
     stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout_cmd)
     stdout = json.loads(stdout.read().decode("utf8"))
 
@@ -49,8 +49,28 @@ def run_ps(client, pids, timeout_cmd, return_as_dict=False):
     return df.to_dict("records") if return_as_dict else df
 
 
+def get_du(client: paramiko.SSHClient, host_config, timeout_cmd, return_as_dict=False):
+    cmd = f"cat {host_config['du_path']}"
+    stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout_cmd)
+    run_at, full_disk, *disk_usages = stdout = stdout.read().decode("utf8").splitlines()
+    fs, full, used, avail, used_rate, moun = full_disk.split()
+    df = pd.DataFrame(
+        [line.split() for line in disk_usages],
+        columns=["usage", "user"],
+        dtype="object",
+    )
+    return {
+        "run_at": run_at,
+        "full": full,
+        "used": used,
+        "avail": avail,
+        "used_rate": used_rate,
+        "user": df.to_dict(orient="records") if return_as_dict else df,
+    }
+
+
 def worker(args):
-    config, name, timeout_client, timeout_cmd, return_as_dict = args
+    config, host, timeout_client, timeout_cmd, return_as_dict = args
     with paramiko.SSHClient() as client:
         client.load_host_keys(config["ssh"]["known_hosts_path"])
         private_key = paramiko.RSAKey.from_private_key_file(
@@ -58,16 +78,18 @@ def worker(args):
         )
 
         try:
+            host_config = config["servers"][host]
             client.connect(
-                config["servers"][name]["host"],
+                host_config["host"],
                 username=config["ssh"]["user"],
                 pkey=private_key,
                 timeout=timeout_client,
             )
-            gpustat, pids = run_gpustat(client, config, name, timeout_cmd)
+            gpustat, pids = run_gpustat(client, host_config, timeout_cmd)
             ps = run_ps(client, pids, timeout_cmd, return_as_dict)
+            disk_usage = get_du(client, host_config, timeout_cmd, return_as_dict)
 
-            return {"status": "ok", "gpustat": gpustat, "ps": ps}
+            return {"status": "ok", "gpustat": gpustat, "ps": ps, "du": disk_usage}
         except socket.timeout:
             return {"status": "error", "message": "timeout. check SSH and VPN settings."}
 
