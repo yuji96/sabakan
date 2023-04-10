@@ -69,8 +69,22 @@ if __name__ == "__main__":
             gpustat = response["gpustat"]
             for gpu in gpustat["gpus"]:
                 with columns[gpu["index"]]:
-                    st.write("GPU使用率: (実装中)")
-
+                    if gpu["utilization.gpu"] > 0:
+                        icon = "⚡️"
+                        extra_class = ""
+                    else:
+                        icon = ""
+                        extra_class = "darkgray"
+                    st.write(
+                        f"""
+                        <p class="gpu-usage-wrapper {extra_class}">
+                            <span>GPU 使用率: </span>
+                            <span class="gpu-usage">
+                                {gpu["utilization.gpu"]} % {icon}
+                            </span>
+                        </p>""",
+                        unsafe_allow_html=True,
+                    )
                     fig, proc_df = plot(gpu)
                     st.plotly_chart(
                         fig,
@@ -145,22 +159,25 @@ if __name__ == "__main__":
             gpustat = response["gpustat"]
             for gpu in gpustat["gpus"]:
                 gpu["host"] = hostname
-                gpu["gpu_id"] = gpu["index"]
                 gpu["process_count"] = len(gpu["processes"])
                 gpu_df.append(gpu)
-        gpu_df = pd.DataFrame(gpu_df).reindex(
-            columns=[
-                "host",
-                "gpu_id",
-                "memory.total",
-                "memory.used",
-                "utilization.gpu",
-                "process_count",
-                "temperature.gpu",
-                "fan.speed",
-                "enforced.power.limit",
-                "power.draw",
-            ]
+        gpu_df = (
+            pd.DataFrame(gpu_df)
+            .reindex(
+                columns=[
+                    "host",
+                    "index",
+                    "memory.total",
+                    "memory.used",
+                    "utilization.gpu",
+                    "process_count",
+                    "temperature.gpu",
+                    "fan.speed",
+                    "enforced.power.limit",
+                    "power.draw",
+                ]
+            )
+            .rename({"index": "GPU idx"})
         )
         AgGrid(
             gpu_df,

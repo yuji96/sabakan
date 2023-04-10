@@ -1,7 +1,6 @@
 import hashlib
 import json
 from pathlib import Path
-from pprint import pprint
 
 import numpy as np
 import pandas as pd
@@ -13,16 +12,28 @@ def name2color(name):
 
 
 def plot(gpu):
+    fig = go.Figure(
+        layout=dict(
+            height=70,
+            margin=dict(l=10, r=10, t=8, b=24),
+            dragmode=False,
+            hoverlabel=dict(font=dict(size=20)),
+            xaxis=dict(
+                tickfont=dict(size=16),
+                range=[0, gpu["memory.total"] / 1000],
+                ticksuffix=" GB",
+                showticksuffix="last",
+            ),
+            yaxis=dict(
+                range=[0, 1],
+                showticklabels=False,
+            ),
+        )
+    )
+
     if len(gpu["processes"]) == 0:
-        fig = go.Figure()
-        fig.update_xaxes(range=[0, gpu["memory.total"]], tickfont=dict(size=16))
-        fig.update_yaxes(range=[0, 1], showticklabels=False)
-        fig.update_layout(height=120, margin=dict(l=10, r=10, t=8, b=8), dragmode=False)
         return fig, pd.DataFrame(
-            {
-                "pid": pd.Series(dtype=int),
-                "gpu_memory_usage": pd.Series(dtype=float),
-            }
+            {"pid": pd.Series(dtype=int), "gpu_memory_usage": pd.Series(dtype=float)}
         )
 
     proc = pd.DataFrame(gpu["processes"]).sort_values(
@@ -31,7 +42,6 @@ def plot(gpu):
     proc["color"] = proc["username"].apply(name2color)
     widths = proc["gpu_memory_usage"] / 1000
 
-    fig = go.Figure()
     fig.add_trace(
         go.Bar(
             y=np.ones_like(widths),
@@ -43,21 +53,6 @@ def plot(gpu):
             hovertemplate="%{customdata}<extra></extra>",
         )
     )
-    # FIXME: 上のと共通化
-    fig.update_xaxes(
-        range=[0, gpu["memory.total"] / 1000],
-        tickfont=dict(size=16),
-        ticksuffix="GB",
-        showticksuffix="last",
-    )
-    fig.update_yaxes(range=[0, 1], showticklabels=False)
-    fig.update_layout(
-        height=120,
-        margin=dict(l=10, r=10, t=8, b=8),
-        dragmode=False,
-        hoverlabel=dict(font=dict(size=20)),
-    )
-
     return fig, proc
 
 
