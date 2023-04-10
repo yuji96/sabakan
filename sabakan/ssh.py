@@ -18,8 +18,8 @@ def get_passphrase():
     return passphrase
 
 
-def run_gpustat(client, secret, name, timeout_cmd):
-    cmd = secret["servers"][name]["gpustat"] + " --json"
+def run_gpustat(client, config, name, timeout_cmd):
+    cmd = config["servers"][name]["gpustat"] + " --json"
     stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout_cmd)
     stdout = json.loads(stdout.read().decode("utf8"))
 
@@ -50,21 +50,21 @@ def run_ps(client, pids, timeout_cmd, return_as_dict=False):
 
 
 def worker(args):
-    secret, name, timeout_client, timeout_cmd, return_as_dict = args
+    config, name, timeout_client, timeout_cmd, return_as_dict = args
     with paramiko.SSHClient() as client:
-        client.load_host_keys(secret["ssh"]["known_hosts_path"])
+        client.load_host_keys(config["ssh"]["known_hosts_path"])
         private_key = paramiko.RSAKey.from_private_key_file(
-            secret["ssh"]["secret_key_path"], secret["ssh"]["passphrase"]
+            config["ssh"]["secret_key_path"], config["ssh"]["passphrase"]
         )
 
         try:
             client.connect(
-                secret["servers"][name]["host"],
-                username=secret["ssh"]["user"],
+                config["servers"][name]["host"],
+                username=config["ssh"]["user"],
                 pkey=private_key,
                 timeout=timeout_client,
             )
-            gpustat, pids = run_gpustat(client, secret, name, timeout_cmd)
+            gpustat, pids = run_gpustat(client, config, name, timeout_cmd)
             ps = run_ps(client, pids, timeout_cmd, return_as_dict)
 
             return {"status": "ok", "gpustat": gpustat, "ps": ps}
@@ -74,20 +74,20 @@ def worker(args):
 
 @st.cache_data
 def fetch_sever_status(
-    secret, names=None, timeout_cmd=3, timeout_client=10, return_as_dict=False
+    config, names=None, timeout_cmd=3, timeout_client=10, return_as_dict=False
 ):
     if names is None:
-        names = secret["servers"].keys()
+        names = config["servers"].keys()
     else:
         # TODO: 要素数変わったら警告
-        names = [name for name in names if name in secret["servers"]]
+        names = [name for name in names if name in config["servers"]]
 
     # TODO: ssh を並列実行するライブラリに移行
     with Pool(processes=len(names)) as pool:
         results = pool.map(
             worker,
             [
-                (secret, name, timeout_client, timeout_cmd, return_as_dict)
+                (config, name, timeout_client, timeout_cmd, return_as_dict)
                 for name in names
             ],
         )
@@ -102,6 +102,6 @@ if __name__ == "__main__":
 
     import yaml
 
-    secret = yaml.safe_load(Path("secret.yaml").read_text())
-    res = fetch_sever_status(secret, return_as_dict=True)
+    config = yaml.safe_load(Path("config.yaml").read_text())
+    res = fetch_sever_status(config, return_as_dict=True)
     Path("sample/gpustat_ps.json").write_text(json.dumps(res, indent=2))

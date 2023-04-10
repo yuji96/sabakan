@@ -2,7 +2,6 @@ dev
 tmp
 viz
 sample
-secret.yaml
 
 .DS_Store
 

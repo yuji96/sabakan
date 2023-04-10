@@ -28,6 +28,7 @@ if __name__ == "__main__":
     )
     css = root.joinpath("assets/style.css").read_text()
     st.write(f"<style>{css}</style>", unsafe_allow_html=True)
+    config = yaml.safe_load(Path.home().joinpath(".sabakan/config.yaml").read_text())
 
     # read data
     if DEBUG:
@@ -35,14 +36,13 @@ if __name__ == "__main__":
             root.joinpath("../sample/gpustat_ps.json").read_text()
         )
     else:
-        secret = yaml.safe_load(Path.home().joinpath(".sabakan/secret.yaml").read_text())
-        secret["ssh"]["passphrase"] = get_passphrase()
+        config["ssh"]["passphrase"] = get_passphrase()
 
         # FIXME: 鍵の異常系どこでやろう
         # paramiko.ssh_exception.SSHException
 
         try:
-            server_status = fetch_sever_status(secret)
+            server_status = fetch_sever_status(config)
             print("ブラウザにサーバ情報を表示/更新しました。")
         except Exception:
             st.cache_data.clear()
