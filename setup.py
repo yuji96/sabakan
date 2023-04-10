@@ -7,9 +7,10 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     install_requires=Path("requirements.txt").read_text().splitlines(),
+    package_data={"": ["style.css", "logo.png"]},
     entry_points={
         "console_scripts": [
-            "sabakan = sabakan.cmd:main",
+            "sabakan = sabakan.command:main",
         ],
     },
 )
