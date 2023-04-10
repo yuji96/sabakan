@@ -29,7 +29,7 @@ def plot(gpu):
         "gpu_memory_usage", ascending=False
     )
     proc["color"] = proc["username"].apply(name2color)
-    widths = proc["gpu_memory_usage"]
+    widths = proc["gpu_memory_usage"] / 1000
 
     fig = go.Figure()
     fig.add_trace(
@@ -43,7 +43,13 @@ def plot(gpu):
             hovertemplate="%{customdata}<extra></extra>",
         )
     )
-    fig.update_xaxes(range=[0, gpu["memory.total"]], tickfont=dict(size=16))
+    # FIXME: 上のと共通化
+    fig.update_xaxes(
+        range=[0, gpu["memory.total"] / 1000],
+        tickfont=dict(size=16),
+        ticksuffix="GB",
+        showticksuffix="last",
+    )
     fig.update_yaxes(range=[0, 1], showticklabels=False)
     fig.update_layout(
         height=120,

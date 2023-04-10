@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
         try:
             server_status = fetch_sever_status(secret)
-            print("ブラウザにサーバ情報を表示しました。")
+            print("ブラウザにサーバ情報を表示/更新しました。")
         except Exception:
             st.cache_data.clear()
             raise
@@ -69,6 +69,8 @@ if __name__ == "__main__":
             gpustat = response["gpustat"]
             for gpu in gpustat["gpus"]:
                 with columns[gpu["index"]]:
+                    st.write("GPU使用率: (実装中)")
+
                     fig, proc_df = plot(gpu)
                     st.plotly_chart(
                         fig,
@@ -126,7 +128,10 @@ if __name__ == "__main__":
             status_df,
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
             gridOptions=options.build(),
-            custom_css={"#gridToolBar": {"display": "none"}},
+            custom_css={
+                "#gridToolBar": {"display": "none"},
+                ".ag-set-filter-list": {"height": "fit-content"},
+            },
         )
 
     with gpu_tab:
@@ -140,11 +145,13 @@ if __name__ == "__main__":
             gpustat = response["gpustat"]
             for gpu in gpustat["gpus"]:
                 gpu["host"] = hostname
+                gpu["gpu_id"] = gpu["index"]
                 gpu["process_count"] = len(gpu["processes"])
                 gpu_df.append(gpu)
         gpu_df = pd.DataFrame(gpu_df).reindex(
             columns=[
                 "host",
+                "gpu_id",
                 "memory.total",
                 "memory.used",
                 "utilization.gpu",
@@ -159,5 +166,8 @@ if __name__ == "__main__":
             gpu_df,
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
             # gridOptions=options.build(),
-            custom_css={"#gridToolBar": {"display": "none"}},
+            custom_css={
+                "#gridToolBar": {"display": "none"},
+                ".ag-set-filter-list": {"height": "fit-content"},
+            },
         )

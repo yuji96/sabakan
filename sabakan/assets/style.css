@@ -34,3 +34,29 @@ div.stTabs button {
   text-align: center;
   font-size: 24px;
 }
+
+/* Overview component */
+#tabs-bui3-tabpanel-0
+  > div:nth-child(1)
+  > div
+  > div:nth-child(n + 2)
+  > div:nth-child(n + 2)
+  > div
+  > div {
+  gap: 0;
+}
+#tabs-bui3-tabpanel-0
+  > div:nth-child(1)
+  > div
+  > div:nth-child(n + 2)
+  > div:nth-child(n + 2)
+  > div
+  > div
+  > div:nth-child(1) {
+  padding-left: 12px;
+}
+#tabs-bui3-tabpanel-0 > div:nth-child(1) > div > div:nth-child(n+2) {
+  border: 1px solid gray;
+  padding: 10px;
+  border-radius: 8px;
+}
