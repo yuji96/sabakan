@@ -1,10 +1,21 @@
 import json
 import socket
+from getpass import getpass
 from multiprocessing import Pool
 
 import pandas as pd
 import paramiko
 import streamlit as st
+
+
+@st.cache_data
+def get_passphrase():
+    tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
+    tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
+    passphrase = getpass("passphrase: ")
+    tmp1.empty()
+    tmp2.empty()
+    return passphrase
 
 
 def run_gpustat(client, secret, name, timeout_cmd):
@@ -53,7 +64,6 @@ def worker(args):
                 pkey=private_key,
                 timeout=timeout_client,
             )
-            del secret["ssh"], private_key
             gpustat, pids = run_gpustat(client, secret, name, timeout_cmd)
             ps = run_ps(client, pids, timeout_cmd, return_as_dict)
 

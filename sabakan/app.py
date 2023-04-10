@@ -1,5 +1,4 @@
 import json
-from getpass import getpass
 from pathlib import Path
 
 import pandas as pd
@@ -9,7 +8,7 @@ from PIL import Image
 from plot import plot
 from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridOptionsBuilder
 
-from sabakan.ssh import fetch_sever_status
+from sabakan.ssh import fetch_sever_status, get_passphrase
 
 if __name__ == "__main__":
     DEBUG = False
@@ -22,29 +21,23 @@ if __name__ == "__main__":
     )
 
     # read data
-    tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
-    tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
     if DEBUG:
         server_status = json.loads(
             root.joinpath("../sample/gpustat_ps.json").read_text()
         )
     else:
         secret = yaml.safe_load(Path.home().joinpath(".sabakan/secret.yaml").read_text())
-        secret["ssh"]["passphrase"] = getpass("passphrase: ")
+        secret["ssh"]["passphrase"] = get_passphrase()
+
         # FIXME: 鍵の異常系どこでやろう
         # paramiko.ssh_exception.SSHException
-        if not secret["ssh"]["passphrase"]:
-            st.stop()
 
         try:
             server_status = fetch_sever_status(secret)
+            print("ブラウザにサーバ情報を表示しました。")
         except Exception:
             st.cache_data.clear()
             raise
-
-    tmp1.empty()
-    tmp2.empty()
-    print("ブラウザにサーバ情報を表示しました。")
 
     # visualize
     # TODO: .host のレスポンシブ化
