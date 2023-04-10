@@ -4,4 +4,3 @@ streamlit
 pillow
 paramiko
 PyYAML
-streamlit-aggrid

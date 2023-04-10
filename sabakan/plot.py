@@ -33,7 +33,7 @@ def plot(gpu):
 
     if len(gpu["processes"]) == 0:
         return fig, pd.DataFrame(
-            {"pid": pd.Series(dtype=int), "gpu_memory_usage": pd.Series(dtype=float)}
+            {"pid": pd.Series(dtype=int), "gpu_memory_usage": pd.Series(dtype=int)}
         )
 
     proc = pd.DataFrame(gpu["processes"]).sort_values(

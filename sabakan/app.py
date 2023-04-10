@@ -6,9 +6,16 @@ import streamlit as st
 import yaml
 from PIL import Image
 from plot import plot
-from st_aggrid import AgGrid, ColumnsAutoSizeMode, GridOptionsBuilder
 
 from sabakan.ssh import fetch_sever_status, get_passphrase
+
+
+def color_per_host(df: pd.DataFrame):
+    color_row = df["host"].isin(df["host"].unique()[1::2])
+    df = df.copy()
+    df[:] = "background-color: #2d2d2d;"
+    return df.loc[color_row]
+
 
 if __name__ == "__main__":
     DEBUG = False
@@ -19,6 +26,8 @@ if __name__ == "__main__":
         page_icon=Image.open(root.joinpath("./assets/logo.png")),
         layout="wide",
     )
+    css = root.joinpath("assets/style.css").read_text()
+    st.write(f"<style>{css}</style>", unsafe_allow_html=True)
 
     # read data
     if DEBUG:
@@ -40,13 +49,11 @@ if __name__ == "__main__":
             raise
 
     # visualize
-    # TODO: .host のレスポンシブ化
-    css = root.joinpath("assets/style.css").read_text()
-    st.write(f"<style>{css}</style>", unsafe_allow_html=True)
-
     gpustat_dfs = []
     ps_dfs = []
-    overview_tab, gpu_tab, process_tab = st.tabs(["Overview", "GPU", "Process"])
+    overview_tab, gpu_tab, process_tab, storage_tab = st.tabs(
+        ["Overview", "GPU", "Process", "Storage"]
+    )
     with overview_tab:
         _, *columns = st.columns([1, 4, 4, 4])
         for i, col in enumerate(columns):
@@ -94,66 +101,18 @@ if __name__ == "__main__":
                         },
                     )
                 proc_df["gpu_index"] = gpu["index"]
-                proc_df["hostname"] = hostname
+                proc_df["host"] = hostname
+
                 gpustat_dfs.append(proc_df)
 
             ps_df = pd.DataFrame(response["ps"])
-            ps_df["hostname"] = hostname
+            ps_df["host"] = hostname
             ps_dfs.append(ps_df)
 
     gpustat_dfs = pd.concat(gpustat_dfs, axis="rows")
     ps_dfs = pd.concat(ps_dfs, axis="rows")
-    status_df = pd.merge(gpustat_dfs, ps_dfs, on=["hostname", "pid"], how="outer")
-    status_df = status_df.reindex(
-        columns=[
-            "pid",
-            "username",
-            "hostname",
-            "gpu_index",
-            "gpu_memory_usage",
-            "cpu_usage",
-            "use_time",
-            "elapse_time",
-            "command",
-            "full_command",
-        ]
-    )
-    status_df.rename(
-        columns={
-            "gpu_index": "GPU idx",
-            "gpu_memory_usage": "Memory (MiB)",
-            "cpu_usage": "CPU usage (%)",
-        },
-        inplace=True,
-    )
-
-    with process_tab:
-        st.info(
-            "ヘッダーをホバーしたときに出てくる ≡ から `Autosize All Columns` を実行すると見やすくなります。",
-            icon="👀",
-        )
-
-        options = GridOptionsBuilder.from_dataframe(status_df)
-        options.configure_default_column(min_column_width=100)
-        options.configure_columns(
-            ["use_time", "elapse_time"], cellStyle={"text-align": "right"}
-        )
-        AgGrid(
-            status_df,
-            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-            gridOptions=options.build(),
-            custom_css={
-                "#gridToolBar": {"display": "none"},
-                ".ag-set-filter-list": {"height": "fit-content"},
-            },
-        )
 
     with gpu_tab:
-        st.info(
-            "ヘッダーをホバーしたときに出てくる ≡ から `Autosize All Columns` を実行すると見やすくなります。",
-            icon="👀",
-        )
-
         gpu_df = []
         for i, (hostname, response) in enumerate(server_status.items()):
             gpustat = response["gpustat"]
@@ -179,12 +138,45 @@ if __name__ == "__main__":
             )
             .rename({"index": "GPU idx"})
         )
-        AgGrid(
-            gpu_df,
-            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-            # gridOptions=options.build(),
-            custom_css={
-                "#gridToolBar": {"display": "none"},
-                ".ag-set-filter-list": {"height": "fit-content"},
-            },
+
+        st.dataframe(
+            gpu_df.style.apply(color_per_host, axis=None),
+            use_container_width=True,
+            height=(len(gpu_df) + 1) * 35 + 3,
         )
+
+    with process_tab:
+        status_df = pd.merge(gpustat_dfs, ps_dfs, on=["host", "pid"], how="outer")
+
+        status_df = status_df.reindex(
+            columns=[
+                "host",
+                "gpu_index",
+                "pid",
+                "username",
+                "gpu_memory_usage",
+                "cpu_usage",
+                "use_time",
+                "elapse_time",
+                "command",
+                "full_command",
+            ]
+        )
+        status_df.rename(
+            columns={
+                "gpu_index": "GPU idx",
+                "gpu_memory_usage": "Memory (MiB)",
+                "cpu_usage": "CPU usage (%)",
+            },
+            inplace=True,
+        )
+        st.dataframe(
+            status_df.style.apply(color_per_host, axis=None).format(
+                {"CPU usage (%)": "{:.1f}"}
+            ),
+            use_container_width=True,
+            height=(len(status_df) + 1) * 35 + 3,
+        )
+
+    with storage_tab:
+        pass
