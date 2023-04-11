@@ -177,12 +177,28 @@ if __name__ == "__main__":
                     "power.draw",
                 ]
             )
-            .rename({"index": "GPU idx"})
+            .rename(
+                columns={
+                    "index": "GPU",
+                    "utilization.gpu": "GPU%",
+                    "temperature.gpu": "temp.",
+                    "enforced.power.limit": "power.limit",
+                }
+            )
         )
 
         copy_button = st.container()
         st.dataframe(
-            gpu_df.style.apply(color_per_host, axis=None),
+            gpu_df.style.apply(color_per_host, axis=None).format(
+                {
+                    "memory.total": "{} MiB",
+                    "memory.used": "{} MiB",
+                    "GPU%": "{}%",
+                    "temp.": "{} ℃",
+                    "power.limit": "{} W",
+                    "power.draw": "{} W",
+                }
+            ),
             use_container_width=True,
             height=(len(gpu_df) + 1) * 35 + 3,
         )
@@ -209,16 +225,23 @@ if __name__ == "__main__":
         status_df.rename(
             columns={
                 "gpu_index": "GPU",
-                "gpu_memory_usage": "Memory (MiB)",
+                "gpu_memory_usage": "gpu.memory",
                 "cpu_usage": "CPU%",
-                "elapse_time": "経過",
             },
             inplace=True,
         )
+        # https://github.com/streamlit/streamlit/issues/4489
+        # status_df["use_time"] = pd.to_timedelta(status_df["use_time"])
+        # status_df["elapse_time"] = pd.to_timedelta(status_df["elapse_time"])
 
         copy_button = st.container()
         st.dataframe(
-            status_df.style.apply(color_per_host, axis=None).format({"CPU%": "{:.1f}"}),
+            status_df.style.apply(color_per_host, axis=None).format(
+                {
+                    "CPU%": "{:.1f}%",
+                    "gpu.memory": "{} GiB",
+                }
+            ),
             use_container_width=True,
             height=(len(status_df) + 1) * 35 + 3,
         )
