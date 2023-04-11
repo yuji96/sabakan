@@ -16,11 +16,11 @@ def get_passphrase():
 def run_gpustat(client, host_config, timeout_cmd):
     cmd = host_config["gpustat"] + " --json"
     stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout_cmd)
-    print(stdout.read().decode("utf8"))
-    print()
-    print(stderr.read().decode("utf8"))
-    stdout = json.loads(stdout.read().decode("utf8"))
+    stdout = stdout.read().decode("utf8")
+    stderr = stderr.read().decode("utf8")
+    print(stdout, stderr, sep="\n")
 
+    stdout = json.loads(stdout)
     pids = [p["pid"] for gpu in stdout["gpus"] for p in gpu["processes"]]
 
     return stdout, pids
@@ -76,6 +76,7 @@ def worker(args):
             config["ssh"]["secret_key_path"], (config["ssh"]["passphrase"] or None)
         )
 
+        print("connecting", host)
         host_config = config["servers"][host]
         client.connect(
             host_config["host"],

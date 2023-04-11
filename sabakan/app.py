@@ -1,3 +1,4 @@
+import argparse
 import json
 import pickle
 import socket
@@ -7,7 +8,7 @@ import pandas as pd
 import pyperclip
 import streamlit as st
 import yaml
-from paramiko.ssh_exception import SSHException
+from paramiko import SSHException
 from PIL import Image
 from plot import plot
 
@@ -34,7 +35,10 @@ def convert_unit(series: pd.Series):
 
 
 if __name__ == "__main__":
-    DEBUG = False
+    parser = argparse.ArgumentParser(description="description")
+    parser.add_argument("--debug", action="store_true")
+    args = parser.parse_args()
+
     root = Path(__file__).parent
 
     st.set_page_config(
@@ -47,7 +51,8 @@ if __name__ == "__main__":
     config = yaml.safe_load(Path.home().joinpath(".sabakan/config.yaml").read_text())
 
     # read data
-    if DEBUG:
+    if args.debug:
+        st.warning("🚧 Debug Mode")
         server_status = json.loads(
             root.joinpath("../sample/server_status.json").read_text()
         )
@@ -64,13 +69,16 @@ if __name__ == "__main__":
             #     json.dumps(server_status, indent=2)
             # )
             print("ブラウザにサーバ情報を表示/更新しました。")
-        # except SSHException:
-        #     print("パスフレーズが異なる可能性があります。再入力してください。")
-        #     st.cache_data.clear()
-        #     st.experimental_rerun()
+        except SSHException as e:
+            if e.args == "OpenSSH private key file checkints do not match":
+                print("パスフレーズが異なる可能性があります。再入力してください。")
+                st.cache_data.clear()
+                st.experimental_rerun()
+            else:
+                raise
         except socket.timeout:
-            print("SSH 接続に失敗しました。設定を確認後、ブラウザのページをリロードして再実行してください。")
-            st.error("SSH 接続に失敗しました。設定を確認後、このページをリロードして再実行してください。")
+            print("SSH 接続に失敗しました。ネットワークや設定を確認後、ブラウザのページをリロードして再実行してください。")
+            st.error("SSH 接続に失敗しました。ネットワークや設定を確認後、このページをリロードして再実行してください。")
             st.cache_data.clear()
             st.stop()
         except pickle.PicklingError:
