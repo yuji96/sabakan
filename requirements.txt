@@ -4,3 +4,5 @@ streamlit
 pillow
 paramiko
 PyYAML
+matplotlib
+pyperclip

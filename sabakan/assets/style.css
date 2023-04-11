@@ -68,3 +68,20 @@ div.stTabs button {
 .gpu-usage {
   font-size: 1.3rem;
 }
+
+div.stButton button p {
+  font-size: 1rem;
+}
+div.stButton button {
+  width: fit-content;
+  margin-left: auto;
+  display: block;
+}
+
+.stRadio {
+  display: flex;
+  gap: 1rem;
+}
+.stRadio > label {
+  margin: 0;
+}

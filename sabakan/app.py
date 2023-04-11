@@ -67,7 +67,7 @@ if __name__ == "__main__":
     gpustat_dfs = []
     ps_dfs = []
     overview_tab, gpu_tab, process_tab, storage_tab = st.tabs(
-        ["Overview", "GPU", "Process", "Storage"]
+        ["GPU Memory", "GPU Status", "Process", "Storage"]
     )
     with overview_tab:
         _, *columns = st.columns([1, 4, 4, 4])
@@ -154,11 +154,14 @@ if __name__ == "__main__":
             .rename({"index": "GPU idx"})
         )
 
+        copy_button = st.container()
         st.dataframe(
             gpu_df.style.apply(color_per_host, axis=None),
             use_container_width=True,
             height=(len(gpu_df) + 1) * 35 + 3,
         )
+        if copy_button.button("Copy Table to Clipboard", key="gpu"):
+            gpu_df.to_clipboard()
 
     with process_tab:
         status_df = pd.merge(gpustat_dfs, ps_dfs, on=["host", "pid"], how="outer")
@@ -179,19 +182,22 @@ if __name__ == "__main__":
         )
         status_df.rename(
             columns={
-                "gpu_index": "GPU idx",
+                "gpu_index": "GPU",
                 "gpu_memory_usage": "Memory (MiB)",
-                "cpu_usage": "CPU usage (%)",
+                "cpu_usage": "CPU%",
+                "elapse_time": "経過",
             },
             inplace=True,
         )
+
+        copy_button = st.container()
         st.dataframe(
-            status_df.style.apply(color_per_host, axis=None).format(
-                {"CPU usage (%)": "{:.1f}"}
-            ),
+            status_df.style.apply(color_per_host, axis=None).format({"CPU%": "{:.1f}"}),
             use_container_width=True,
             height=(len(status_df) + 1) * 35 + 3,
         )
+        if copy_button.button("Copy Table to Clipboard", key="proc"):
+            status_df[["host", "GPU", "pid", "username", "CPU%", "経過"]].to_clipboard()
 
     with storage_tab:
         user_dfs = []
@@ -209,17 +215,40 @@ if __name__ == "__main__":
             sum_df.append(du)
 
         user_df = pd.concat(user_dfs, axis="columns")
-        sum_df = pd.DataFrame(sum_df).reindex(
-            columns=["host", "full", "used", "avail", "used_rate", "run_at"]
+        sum_df = (
+            pd.DataFrame(sum_df)
+            .reindex(columns=["host", "full", "used", "avail", "used_rate", "run_at"])
+            .set_index("host")
         )
+
+        sum_copy, uesr_radio, user_copy = st.columns([4, 3, 2])
 
         col1, col2 = st.columns([4, 5])
         with col1:
             st.dataframe(
                 sum_df, height=(len(sum_df) + 1) * 35 + 3, use_container_width=True
             )
+            if sum_copy.button("Copy Table to Clipboard", key="sum"):
+                sum_df.to_clipboard()
         with col2:
-            user_df = user_df.apply(convert_unit, axis="rows").rename_axis("単位: GiB")
-            st.dataframe(
-                user_df, height=(len(user_df) + 1) * 35 + 3, use_container_width=True
+            user_df = (
+                user_df.apply(convert_unit, axis="rows").drop(index="/home").fillna(0)
             )
+
+            unit = uesr_radio.radio("単位:", ["GiB", "%"], horizontal=True)
+            n = 5
+            if user_copy.button(f"Copy Top {n} to Clipboard", key="storage"):
+                pyperclip.copy(get_top(user_df, n))
+            if unit == "GiB":
+                st.dataframe(
+                    user_df.style.background_gradient(axis="rows").format("{:.1f} GiB"),
+                    height=(len(user_df) + 1) * 35 + 3,
+                    use_container_width=True,
+                )
+            else:
+                user_df /= convert_unit(sum_df["full"])
+                st.dataframe(
+                    user_df.style.background_gradient(axis="rows").format("{:.1%}"),
+                    height=(len(user_df) + 1) * 35 + 3,
+                    use_container_width=True,
+                )
