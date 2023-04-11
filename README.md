@@ -13,9 +13,9 @@
 2. 設定ファイル `~/.sabakan/config.yaml` を作成する。
    ```yaml
    ssh:
-     user: username
-     known_hosts_path: /home/username/.ssh/known_hosts
-     private_key_path: /home/username/.ssh/your_private_key
+     user: username_on_server
+     known_hosts_path: /home/username_on_your_PC/.ssh/known_hosts
+     secret_key_path: /home/username_on_your_PC/.ssh/id_rsa
    servers:
      foo:
        host: <ip address>
@@ -29,6 +29,10 @@
    - ホスト名（foo, bar）をキーとする。
    - gpustat のコマンドパスをホストごとに指定する。
    - du.txt のパスをホストごとに指定する。
+3. ターミナルで `sabakan` コマンドを実行するとブラウザでアプリが開かれる。
+   - 初めて起動するときに `streamlit` から Email を聞かれるが、何も入力せずに Enter で良い。
+4. コマンドを実行したターミナルに戻ってパスフレーズを入力する。
+5. ブラウザに戻るとサーバ情報が見れる。
 
 ## 管理者の設定
 
