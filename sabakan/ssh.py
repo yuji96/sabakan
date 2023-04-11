@@ -68,6 +68,7 @@ def worker(args):
     config, host, timeout_client, timeout_cmd, return_as_dict = args
     with paramiko.SSHClient() as client:
         client.load_host_keys(config["ssh"]["known_hosts_path"])
+        client.set_missing_host_key_policy(paramiko.WarningPolicy())
         private_key = paramiko.RSAKey.from_private_key_file(
             config["ssh"]["secret_key_path"], (config["ssh"]["passphrase"] or None)
         )
