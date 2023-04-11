@@ -16,9 +16,9 @@ def get_passphrase():
 def run_gpustat(client, host_config, timeout_cmd):
     cmd = host_config["gpustat"] + " --json"
     stdin, stdout, stderr = client.exec_command(cmd, timeout=timeout_cmd)
-    print(stdout)
+    print(stdout.read().decode("utf8"))
     print()
-    print(stderr)
+    print(stderr.read().decode("utf8"))
     stdout = json.loads(stdout.read().decode("utf8"))
 
     pids = [p["pid"] for gpu in stdout["gpus"] for p in gpu["processes"]]
