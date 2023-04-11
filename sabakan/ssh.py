@@ -8,14 +8,9 @@ import paramiko
 import streamlit as st
 
 
-@st.cache_data
+@st.cache_data(show_spinner="🔑 ターミナルに戻ってパスフレーズを入力してください。")
 def get_passphrase():
-    tmp1 = st.warning("ターミナルに戻ってパスフレーズを入力してください。", icon="🔑")
-    tmp2 = st.warning("複数のタブで開くとバグるので、ターミナルから再起動する際はこのタブを消してください。")
-    passphrase = getpass("passphrase: ")
-    tmp1.empty()
-    tmp2.empty()
-    return passphrase
+    return getpass("passphrase: ")
 
 
 def run_gpustat(client, host_config, timeout_cmd):
@@ -74,27 +69,24 @@ def worker(args):
     with paramiko.SSHClient() as client:
         client.load_host_keys(config["ssh"]["known_hosts_path"])
         private_key = paramiko.RSAKey.from_private_key_file(
-            config["ssh"]["secret_key_path"], config["ssh"]["passphrase"]
+            config["ssh"]["secret_key_path"], (config["ssh"]["passphrase"] or None)
         )
 
-        try:
-            host_config = config["servers"][host]
-            client.connect(
-                host_config["host"],
-                username=config["ssh"]["user"],
-                pkey=private_key,
-                timeout=timeout_client,
-            )
-            gpustat, pids = run_gpustat(client, host_config, timeout_cmd)
-            ps = run_ps(client, pids, timeout_cmd, return_as_dict)
-            disk_usage = get_du(client, host_config, timeout_cmd, return_as_dict)
+        host_config = config["servers"][host]
+        client.connect(
+            host_config["host"],
+            username=config["ssh"]["user"],
+            pkey=private_key,
+            timeout=timeout_client,
+        )
+        gpustat, pids = run_gpustat(client, host_config, timeout_cmd)
+        ps = run_ps(client, pids, timeout_cmd, return_as_dict)
+        disk_usage = get_du(client, host_config, timeout_cmd, return_as_dict)
 
-            return {"status": "ok", "gpustat": gpustat, "ps": ps, "du": disk_usage}
-        except socket.timeout:
-            return {"status": "error", "message": "timeout. check SSH and VPN settings."}
+        return {"status": "ok", "gpustat": gpustat, "ps": ps, "du": disk_usage}
 
 
-@st.cache_data
+@st.cache_data(show_spinner="📡 サーバ情報を取得しています。（最大 10 秒間）")
 def fetch_sever_status(
     config, names=None, timeout_cmd=3, timeout_client=10, return_as_dict=False
 ):

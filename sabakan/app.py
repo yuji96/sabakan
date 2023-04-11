@@ -1,13 +1,18 @@
 import json
+import pickle
+import socket
 from pathlib import Path
 
 import pandas as pd
+import pyperclip
 import streamlit as st
 import yaml
+from paramiko.ssh_exception import SSHException
 from PIL import Image
 from plot import plot
 
 from sabakan.ssh import fetch_sever_status, get_passphrase
+from sabakan.views.storage import get_top
 
 
 def color_per_host(df: pd.DataFrame):
@@ -59,6 +64,27 @@ if __name__ == "__main__":
             #     json.dumps(server_status, indent=2)
             # )
             print("ブラウザにサーバ情報を表示/更新しました。")
+        except SSHException:
+            print("パスフレーズが異なる可能性があります。再入力してください。")
+            st.cache_data.clear()
+            st.experimental_rerun()
+        except socket.timeout:
+            print("SSH 接続に失敗しました。設定を確認後、ブラウザのページをリロードして再実行してください。")
+            st.error("SSH 接続に失敗しました。設定を確認後、このページをリロードして再実行してください。")
+            st.cache_data.clear()
+            st.stop()
+        except pickle.PicklingError:
+            print(
+                "並列処理が衝突しました。ターミナルで Ctrl+C を実行してアプリを中断し、再起動してください。"
+                "（ブラウザでこのアプリが複数タブで開かれていた可能性があります。）"
+            )
+            st.error(
+                "並列処理が衝突しました。"
+                "ブラウザにこのアプリのタブが 1 つしか無いことを確認して、そのタブをリロードしてください。"
+                "もし、タブが複数あれば 1 つに減らしてください。"
+            )
+            st.cache_data.clear()
+            st.stop()
         except Exception:
             st.cache_data.clear()
             raise
