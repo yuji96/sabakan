@@ -109,7 +109,7 @@ if __name__ == "__main__":
             with col:
                 st.write(f"<h2 class='cuda'>cuda:{i}</h2>", unsafe_allow_html=True)
 
-        for i, (hostname, response) in enumerate(server_status.items()):
+        for hostname, response in server_status.items():
             if response["status"] == "error":
                 label, message = st.columns([1, 12])
             else:
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
     with gpu_tab:
         gpu_df = []
-        for i, (hostname, response) in enumerate(server_status.items()):
+        for hostname, response in server_status.items():
             gpustat = response["gpustat"]
             for gpu in gpustat["gpus"]:
                 gpu["host"] = hostname
@@ -211,7 +211,7 @@ if __name__ == "__main__":
             height=(len(gpu_df) + 1) * 35 + 3,
         )
         if copy_button.button("Copy Table to Clipboard", key="gpu"):
-            gpu_df.to_clipboard()
+            pyperclip.copy(gpu_df.to_string(index=False))
 
     with process_tab:
         status_df = pd.merge(gpustat_dfs, ps_dfs, on=["host", "pid"], how="outer")
@@ -254,7 +254,11 @@ if __name__ == "__main__":
             height=(len(status_df) + 1) * 35 + 3,
         )
         if copy_button.button("Copy Table to Clipboard", key="proc"):
-            status_df[["host", "GPU", "pid", "username", "CPU%", "経過"]].to_clipboard()
+            pyperclip.copy(
+                status_df[
+                    ["host", "GPU", "pid", "username", "CPU%", "elapse_time"]
+                ].to_string(index=False)
+            )
 
     with storage_tab:
         user_dfs = []
@@ -286,7 +290,7 @@ if __name__ == "__main__":
                 sum_df, height=(len(sum_df) + 1) * 35 + 3, use_container_width=True
             )
             if sum_copy.button("Copy Table to Clipboard", key="sum"):
-                sum_df.to_clipboard()
+                pyperclip.copy(sum_df.reset_index().to_string(index=False))
         with col2:
             user_df = (
                 user_df.apply(convert_unit, axis="rows").drop(index="/home").fillna(0)
