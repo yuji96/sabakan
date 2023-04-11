@@ -64,10 +64,10 @@ if __name__ == "__main__":
             #     json.dumps(server_status, indent=2)
             # )
             print("ブラウザにサーバ情報を表示/更新しました。")
-        except SSHException:
-            print("パスフレーズが異なる可能性があります。再入力してください。")
-            st.cache_data.clear()
-            st.experimental_rerun()
+        # except SSHException:
+        #     print("パスフレーズが異なる可能性があります。再入力してください。")
+        #     st.cache_data.clear()
+        #     st.experimental_rerun()
         except socket.timeout:
             print("SSH 接続に失敗しました。設定を確認後、ブラウザのページをリロードして再実行してください。")
             st.error("SSH 接続に失敗しました。設定を確認後、このページをリロードして再実行してください。")
