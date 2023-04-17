@@ -70,7 +70,7 @@ if __name__ == "__main__":
             # )
             print("ブラウザにサーバ情報を表示/更新しました。")
         except SSHException as e:
-            if e.args == "OpenSSH private key file checkints do not match":
+            if e.args == ("OpenSSH private key file checkints do not match",):
                 print("パスフレーズが異なる可能性があります。再入力してください。")
                 st.cache_data.clear()
                 st.experimental_rerun()

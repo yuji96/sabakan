@@ -14,8 +14,8 @@
    ```yaml
    ssh:
      user: username_on_server
-     known_hosts_path: /home/username_on_your_PC/.ssh/known_hosts
-     secret_key_path: /home/username_on_your_PC/.ssh/id_rsa
+     known_hosts_path: ~/.ssh/known_hosts
+     secret_key_path: ~/.ssh/id_rsa
    servers:
      foo:
        host: <ip address>
@@ -31,6 +31,7 @@
    - du.txt のパスをホストごとに指定する。
 3. ターミナルで `sabakan` コマンドを実行するとブラウザでアプリが開かれる。
    - 初めて起動するときに `streamlit` から Email を聞かれるが、何も入力せずに Enter で良い。
+     ![](./first_streamlit.png)
 4. コマンドを実行したターミナルに戻ってパスフレーズを入力する。
 5. ブラウザに戻るとサーバ情報が見れる。
 

@@ -1,5 +1,5 @@
 import json
-import socket
+import os
 from getpass import getpass
 from multiprocessing import Pool
 
@@ -70,10 +70,11 @@ def get_du(client: paramiko.SSHClient, host_config, timeout_cmd, return_as_dict=
 def worker(args):
     config, host, timeout_client, timeout_cmd, return_as_dict = args
     with paramiko.SSHClient() as client:
-        client.load_host_keys(config["ssh"]["known_hosts_path"])
+        client.load_host_keys(os.path.expanduser(config["ssh"]["known_hosts_path"]))
         client.set_missing_host_key_policy(paramiko.WarningPolicy())
         private_key = paramiko.RSAKey.from_private_key_file(
-            config["ssh"]["secret_key_path"], (config["ssh"]["passphrase"] or None)
+            os.path.expanduser(config["ssh"]["secret_key_path"]),
+            (config["ssh"]["passphrase"] or None),
         )
 
         print("connecting", host)
